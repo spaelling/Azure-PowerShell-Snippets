@@ -6,22 +6,22 @@
 
 <#
 .SYNOPSIS
-Short description
+Create new Azure resource group with autocomplete on tags
 
 .DESCRIPTION
-Long description
+Create new Azure resource group with autocomplete on tags (based on existing tags). Tag names are defined in the function
 
 .PARAMETER Name
-Parameter description
+Name of resource group
 
 .PARAMETER Location
-Parameter description
+Location to create resource group, defaults to West Europe
 
 .PARAMETER NoCache
-Parameter description
+Do not used cached tag values (runtime 2-3 seconds)
 
 .EXAMPLE
-An example
+New-AzTaggedResourceGroup -Name RG-Stuff42 -Project MeaningOfLife -Department IT -Environment Dev
 
 .NOTES
 General notes
@@ -53,6 +53,13 @@ function New-AzTaggedResourceGroup {
             (Get-Date $Global:ResourceGroupTags['TimeStamp']).AddMinutes(5) -lt $Now # refresh tags after 5 minutes
         )
         {
+            # check that there is an Azure context available
+            try {
+                $null = Get-AzContext -ErrorAction Stop
+            }
+            catch {
+                throw "Please run 'Connect-AzAccount' to login"
+            }
             # setup runspace to get tags
             $sessionstate = [system.management.automation.runspaces.initialsessionstate]::CreateDefault()
             $_Tags = @{
@@ -116,6 +123,14 @@ function New-AzTaggedResourceGroup {
     
     begin
     {
+        # check that there is an Azure context available
+        try {
+            $null = Get-AzContext -ErrorAction Stop
+        }
+        catch {
+            throw "Please run 'Connect-AzAccount' to login"
+        }
+
         foreach ($ParameterName in $ParameterNames) {
             Set-Variable -Name $ParameterName -Value $PSBoundParameters[$parameterName]
         }
