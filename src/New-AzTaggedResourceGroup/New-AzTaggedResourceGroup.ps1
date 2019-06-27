@@ -55,7 +55,7 @@ function New-AzTaggedResourceGroup {
         {
             # check that there is an Azure context available
             try {
-                $null = Get-AzContext -ErrorAction Stop
+                $null = Get-AzContext -ErrorAction Stop -Debug:$false
             }
             catch {
                 throw "Please run 'Connect-AzAccount' to login"
@@ -65,8 +65,12 @@ function New-AzTaggedResourceGroup {
             $_Tags = @{
                 TimeStamp = Get-Date
             }
+            # TODO: add default values
+            foreach ($ParameterName in $ParameterNames) {
+                $_Tags[$ParameterName] = @()
+            }            
             $sessionstate.Variables.Add(
-                (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry('Tags', $_Tags, $null))
+                (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry('Tags', $_Tags, $null))                
             )
                         
             $runspacepool = [runspacefactory]::CreateRunspacePool(1, [int]$env:NUMBER_OF_PROCESSORS+1, $sessionstate, $Host)
@@ -77,8 +81,12 @@ function New-AzTaggedResourceGroup {
                 $runspace = [powershell]::Create()
                 $runspace.RunspacePool = $runspacepool    
                 $null = $runspace.AddScript({
-                    param($ParameterName)
-                    $_Tags[$ParameterName] = (Get-AzTag -Name $ParameterName).Values.Name
+                    param($ParameterName)                    
+                    try {
+                        $Tags[$ParameterName] += (Get-AzTag -Name $ParameterName -ErrorAction stop).Values.Name
+                    }
+                    catch {
+                    }
                 }).AddArgument($ParameterName)
                 $runspaces += [PSCustomObject]@{ Pipe = $runspace; Status = $runspace.BeginInvoke() } 
             }
@@ -125,7 +133,7 @@ function New-AzTaggedResourceGroup {
     {
         # check that there is an Azure context available
         try {
-            $null = Get-AzContext -ErrorAction Stop
+            $null = Get-AzContext -ErrorAction Stop -Debug:$false
         }
         catch {
             throw "Please run 'Connect-AzAccount' to login"
