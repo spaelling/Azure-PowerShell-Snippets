@@ -1,11 +1,12 @@
-##############################
-## Author: Anders Spælling, spaelling@gmail.com
-## Last modified: 27-06-2019
-##
-## TODO
-## test service endpoints in NSG
-##
-##############################
+######################################################################
+## Author: Anders Spælling, spaelling@gmail.com                     ##
+## Last modified: 03-07-2019                                        ##
+## Source: https://github.com/spaelling/Azure-PowerShell-Snippets/  ##
+##                                                                  ##
+######################################################################
+
+# TODO
+# test service endpoints in NSG
 
 #region helper
 function CheckNetworkToSubnet ([uint32]$un2, [uint32]$ma2, [uint32]$un1)
@@ -78,19 +79,19 @@ function checkSubnet ([string]$addr1, [string]$addr2)
     if($mask1 -and $mask2){
         # If both inputs are subnets check which is smaller and check if it belongs in the larger one
         if($mask1 -lt $mask2){
-            return CheckSubnetToNetwork $unetwork1 $mask1 $unetwork2
+            return CheckSubnetToNetwork $unetworkmaskunetwork2
         }else{
-            return CheckNetworkToSubnet $unetwork2 $mask2 $unetwork1
+            return CheckNetworkToSubnet $unetworkmaskunetwork1
         }
     }ElseIf($mask1){
         # If second input is address and first input is subnet check if it belongs
-        return CheckSubnetToNetwork $unetwork1 $mask1 $unetwork2
+        return CheckSubnetToNetwork $unetworkmaskunetwork2
     }ElseIf($mask2){
         # If first input is address and second input is subnet check if it belongs
-        return CheckNetworkToSubnet $unetwork2 $mask2 $unetwork1
+        return CheckNetworkToSubnet $unetworkmaskunetwork1
     }Else{
         # If both inputs are ip check if they match
-        CheckNetworkToNetwork $unetwork1 $unetwork2
+        CheckNetworkToNetwork $unetworkunetwork2
     }
 }
 
@@ -267,7 +268,7 @@ function Get-AzEffectiveSecurityRules {
                 }   
     
                 Write-Debug "Checking if '$($Rule.Name)' ($IPv4) is included in '$($Rule.DestinationAddressPrefix)'"
-                if($null -ne $Rule.DestinationAddressPrefix -and ($Rule.DestinationAddressPrefix | Where-Object{checkSubnet $IPv4 $_}).Count -gt 0)
+                if($null -ne $Rule.DestinationAddressPrefix -and ($Rule.DestinationAddressPrefix | Where-Object{checkSubnet $IPv_}).Count -gt 0)
                 {
                     Write-Debug "Adding '$($Rule.Name)'' (Inbound)"
                     $Rules.Add((Format-NSGRule -Rule $Rule))
@@ -292,7 +293,7 @@ function Get-AzEffectiveSecurityRules {
                 }  
     
                 Write-Debug "Checking if '$($Rule.Name)' ($IPv4) is included in '$($Rule.SourceAddressPrefix)'"
-                if($null -ne $Rule.SourceAddressPrefix -and ($Rule.SourceAddressPrefix | Where-Object{checkSubnet $IPv4 $_}).Count -gt 0)
+                if($null -ne $Rule.SourceAddressPrefix -and ($Rule.SourceAddressPrefix | Where-Object{checkSubnet $IPv_}).Count -gt 0)
                 {
                     Write-Debug "Adding '$($Rule.Name)'' (Outbound)"
                     $Rules.Add((Format-NSGRule -Rule $Rule))
