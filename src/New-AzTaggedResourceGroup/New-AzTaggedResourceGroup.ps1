@@ -1,8 +1,9 @@
-##############################
-## Author: Anders Spælling, spaelling@gmail.com
-## Last modified: 27-06-2019
-##
-##############################
+######################################################################
+## Author: Anders Spælling, spaelling@gmail.com                     ##
+## Last modified: 27-06-2019                                        ##
+## Source: https://github.com/spaelling/Azure-PowerShell-Snippets/  ##
+##                                                                  ##
+######################################################################
 
 <#
 .SYNOPSIS
