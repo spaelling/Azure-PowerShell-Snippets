@@ -1,3 +1,10 @@
+######################################################################
+## Author: Anders Spælling, spaelling@gmail.com                     ##
+## Last modified: 03-07-2019                                        ##
+## Source: https://github.com/spaelling/Azure-PowerShell-Snippets/  ##
+##                                                                  ##
+######################################################################
+
 <#
 .SYNOPSIS
 Rename a NSG security rule
