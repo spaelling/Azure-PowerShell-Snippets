@@ -9,11 +9,13 @@ Write-Host "PowerShell HTTP trigger function processed a request."
 $status = $body = $null
 
 try {
+    # Parse request query/body
+
     <ParseParameterBlock>    
 }
 catch {
     $status = [HttpStatusCode]::BadRequest
-    $body = "Invalid input"
+    $body = $_.Exception.Message
 }
 
 # may have been already set due to exception when parsing input

@@ -46,6 +46,20 @@ function ConvertTo-AzureFunctionApp {
         # } | ConvertTo-Json
         $ParameterName = $Parameter.Name
         $ParameterType = $Parameter.ParameterType.Name
+        $IsSwitchParameter = $Parameter.SwitchParameter
+        $IsMandatory = $Parameter.Attributes.Mandatory
+
+        # Write-Verbose "Attributes:"
+        # $Parameter.Attributes | ConvertTo-Json | Write-Verbose
+
+        $MissingParameterAction = if($IsMandatory)
+        {
+            "throw `"Missing mandatory parameter '$ParameterName'`""
+        }
+        else
+        {
+            "Write-Warning `"Unable to parse '$ParameterName' or it was not provided in the request query/body`""
+        }
 
         $FunctionCall += " -$ParameterName `$$ParameterName"
 
@@ -57,25 +71,31 @@ function ConvertTo-AzureFunctionApp {
         else {
             $ParameterValue = @("`$Request.Query.$ParameterName","`$Request.Body.$ParameterName")
         }
-        
 <#
 TODO: 
-
-seems to ignore newlines in following iterations of loop
-
+if parameter is mandatory it must also be in the request
+handle SwitchParameter when calling function
 #>
 @"
-    # get parameter value from request query
-    # ParameterType $ParameterType
-    `$$ParameterName = $($ParameterValue[0])
-    if (`$null -eq `$$ParameterName) {
-        # get parameter value from request body
-        `$$ParameterName = $($ParameterValue[1])
+    # get parameter value from request query    
+    try {
+        `$$ParameterName = $($ParameterValue[0])
+        if (`$null -eq `$$ParameterName) {
+            # get parameter value from request body
+            `$$ParameterName = $($ParameterValue[1])
+        }   
     }
+    catch {}
+
+    if(`$null -eq `$$ParameterName)
+    {
+        $MissingParameterAction
+    }
+    #
 "@
     }
 
-    $ParseParameterBlock | Write-Verbose
+    # $ParseParameterBlock | Write-Verbose
 
     $Out = $Template.Replace("<ParseParameterBlock>", $ParseParameterBlock).Replace("<FunctionCall>", $FunctionCall)
 
