@@ -1,3 +1,6 @@
+<#
+
+#>
 using namespace Microsoft.PowerShell.EditorServices.Extensions
 function ConvertTo-AzureFunctionApp {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact='Medium')]
@@ -5,6 +8,15 @@ function ConvertTo-AzureFunctionApp {
         [System.Management.Automation.FunctionInfo]$Command,
         [switch]$CreateFunctionApp
     )
+
+    $CommandName = $Command.Name
+
+    if([string]::IsNullOrEmpty($CommandName))
+    {
+        throw "Unable to determine function name"
+    }
+
+    Write-Verbose "Command name is '$($CommandName)'"
 
     # $MyInvocation | ConvertTo-Json | Write-Verbose
 
@@ -18,9 +30,10 @@ function ConvertTo-AzureFunctionApp {
 
     $Template = Get-Content -Path $TemplatePath
 
+    Write-Verbose "Template:"
     $Template | Write-Verbose
 
-    $FunctionCall = $Command.Name
+    $FunctionCall = $CommandName
 
     $ParseParameterBlock = $Command.Parameters.GetEnumerator() | ForEach-Object {
         $Parameter = $_.Value
@@ -50,9 +63,14 @@ if (`$null -eq `$$ParameterName) {
     {
         $FunctionDir = $Command.Name.Replace('-','_')
         $OutPath = (Resolve-Path -Path '.').Path
+        Write-Verbose "Creating path '$OutPath\$FunctionDir'"
         $null = New-Item -ItemType Directory -Path "$OutPath\$FunctionDir" -Force
-        $Out | Out-File -FilePath "$OutPath\$FunctionDir\run.ps1" -Force
-        $null = Copy-Item -Path "$PSScriptRoot\function.json" -Destination "$OutPath\$FunctionDir\function.json" -Force
+        $Runps1Path = "{0}\{1}\run.ps1" -f $OutPath, $FunctionDir
+        Write-Verbose "Creating file '$Runps1Path'"
+        $Out | Out-File -FilePath $Runps1Path -Force
+        $FunctionJsonPath = "{0}\{1}\function.json" -f $OutPath, $FunctionDir
+        Write-Verbose "Copying '$PSScriptRoot\function.json' to '$FunctionJsonPath'"
+        $null = Copy-Item -Path "$PSScriptRoot\function.json" -Destination "$FunctionJsonPath" -Force
     }
     else {
         return $Out
@@ -65,22 +83,23 @@ function Invoke-ConvertToFunctionApp {
         # [Microsoft.PowerShell.EditorServices.Extensions.EditorContext]
         $context
     )
-    Write-Host "`n"
+    $VerbosePreference = 'Continue'
+    Write-Verbose "`n"
     # $context = $psEditor.GetEditorContext()
     $CurrentFile = $context.CurrentFile
-    Write-Host "Current file: $($CurrentFile.Path)"
+    Write-Verbose "Current file: $($CurrentFile.Path)"
     [array]$TextLines = $CurrentFile.GetTextLines()
-    Write-Host "Number of text lines = $($TextLines.Length)"
+    Write-Verbose "Number of text lines = $($TextLines.Length)"
     # if($TextLines.Length -eq 1)
     # {
-    #     Write-Host "$($CurrentFile.Path) only contains a single line"
+    #     Write-Verbose "$($CurrentFile.Path) only contains a single line"
     #     $TextLines = $TextLines.Split('`n')
     # }
 
     [int]$LineNumber = $context.SelectedRange.Start.Line
     # $TextLines | gm *
     $Line = $TextLines[($LineNumber-1)..$LineNumber]
-    Write-Host "Line #$LineNumber contains: '$Line'"
+    Write-Verbose "Line #$LineNumber contains: '$Line'"
 
     $LineTokens = $Line.Split(" ")
     $FirstToken = $LineTokens | Select-Object -Index 0
@@ -99,7 +118,7 @@ function Invoke-ConvertToFunctionApp {
     }
     # TODO: check if whatever is selected is an actual function, use get-command
 
-    Write-Host "Converting '$FunctionName' to Azure Function App function...`n`n`n`n"
+    Write-Host "Converting '$FunctionName' to Azure Function App function..."
     try {
         $Command = Get-Command $FunctionName
     }
