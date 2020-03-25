@@ -6,15 +6,27 @@ param($Request, $TriggerMetadata)
 # Write to the Azure Functions log stream.
 Write-Host "PowerShell HTTP trigger function processed a request."
 
-<ParseParameterBlock>
+$status = $body = $null
 
 try {
-    $body = <FunctionCall>
-    $status = [HttpStatusCode]::OK
+    <ParseParameterBlock>    
 }
 catch {
     $status = [HttpStatusCode]::BadRequest
-    $body = $_
+    $body = "Invalid input"
+}
+
+# may have been already set due to exception when parsing input
+if($null -eq $status)
+{
+    try {
+        $body = <FunctionCall>
+        $status = [HttpStatusCode]::OK
+    }
+    catch {
+        $status = [HttpStatusCode]::BadRequest
+        $body = $_
+    }
 }
 
 # Associate values to output bindings by calling 'Push-OutputBinding'.

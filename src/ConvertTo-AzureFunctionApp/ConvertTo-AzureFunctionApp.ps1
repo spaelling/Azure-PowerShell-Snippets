@@ -42,16 +42,17 @@ function ConvertTo-AzureFunctionApp {
         #     ParameterType = $Parameter.ParameterType.FullName
         # } | ConvertTo-Json
         $ParameterName = $Parameter.Name
+        $ParameterType = $Parameter.ParameterType.Name
 
         $FunctionCall += " -$ParameterName `$$ParameterName"
 # TODO: seems to ignore newlines in following iterations of loop
 @"
-# get parameter value from request query
-`$$ParameterName = `$Request.Query.$ParameterName
-if (`$null -eq `$$ParameterName) {
-    # get parameter value from request body
-    `$$ParameterName = `$Request.Body.$ParameterName
-}
+    # get parameter value from request query
+    `$$ParameterName = [$ParameterType]::Parse(`$Request.Query.$ParameterName)
+    if (`$null -eq `$$ParameterName) {
+        # get parameter value from request body
+        `$$ParameterName = [$ParameterType]::Parse(`$Request.Body.$ParameterName)
+    }
 "@
     }
 
