@@ -4,7 +4,7 @@ Generates the code needed to execute a PowerShell function in an Azure Function 
 
 The code necessary to parse the request query or body is generated, and the function is called using the function parameters.
 
-![Example](example.gif)
+![Example](example1.gif)
 
 The PS function must be available to the FA function. Best practice is to import modules and place functions in `profile.ps1`.
 
