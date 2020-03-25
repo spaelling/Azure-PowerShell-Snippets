@@ -45,13 +45,29 @@ function ConvertTo-AzureFunctionApp {
         $ParameterType = $Parameter.ParameterType.Name
 
         $FunctionCall += " -$ParameterName `$$ParameterName"
-# TODO: seems to ignore newlines in following iterations of loop
+
+        # only do ::Parse if the parameter type has a parse function
+        if($ParameterType -in @("Int32", "Char", "Byte", "Int64", "Boolean", "Decimal", "Single", "Double", "DateTime"))
+        {
+            $ParameterValue = @("[$ParameterType]::Parse(`$Request.Query.$ParameterName)","[$ParameterType]::Parse(`$Request.Body.$ParameterName)")
+        }
+        else {
+            $ParameterValue = @("`$Request.Query.$ParameterName","`$Request.Body.$ParameterName")
+        }
+        
+<#
+TODO: 
+
+seems to ignore newlines in following iterations of loop
+
+#>
 @"
     # get parameter value from request query
-    `$$ParameterName = [$ParameterType]::Parse(`$Request.Query.$ParameterName)
+    # ParameterType $ParameterType
+    `$$ParameterName = $($ParameterValue[0])
     if (`$null -eq `$$ParameterName) {
         # get parameter value from request body
-        `$$ParameterName = [$ParameterType]::Parse(`$Request.Body.$ParameterName)
+        `$$ParameterName = $($ParameterValue[1])
     }
 "@
     }
