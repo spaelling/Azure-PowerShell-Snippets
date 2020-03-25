@@ -35,7 +35,10 @@ function ConvertTo-AzureFunctionApp {
 
     $FunctionCall = $CommandName
 
-    $ParseParameterBlock = $Command.Parameters.GetEnumerator() | ForEach-Object {
+    # Ignore these parameters, ex. Verbose and others from advanced functions
+    $IgnoreParameters = @("Verbose", "Debug", "ErrorAction", "WarningAction", "InformationAction", "ErrorVariable", "WarningVariable", "InformationVariable", "OutVariable", "OutBuffer", "PipelineVariable")
+
+    $ParseParameterBlock = $Command.Parameters.GetEnumerator() | Where-Object {$_.Value.Name -notin $IgnoreParameters} | ForEach-Object {
         $Parameter = $_.Value
         # @{
         #     Name = $Parameter.Name
